@@ -1,47 +1,50 @@
 const fs = require('fs');
-// Now we can show what file to scan || it will use by default
-const filePath = process.argv[2] || './access.log'; //node analyzer.js diffrent.log
-const text = fs.readFileSync(filePath, 'utf-8');
 
-const split = text.split('\n');
+// 1. Get the file dir
+const filePath = process.argv[2] || './access.log';
 
-let notFoundCount = 0;
-let isFoundOk = 0;
+try {
+    // 2. Read file
+    const text = fs.readFileSync(filePath, 'utf-8');
+    const lines = text.split('\n');
 
-// Created a objekt for saving IP adresess
-const ipSummer = {};
+    let notFoundCount = 0;
+    let isFoundOk = 0;
+    
+    // Object for counting ip
+    const ipCounts = {};
 
-console.log("Number of rows: ",split.length);
+    console.log(`Analyzing file: ${filePath}`);
+    console.log("Number of rows: ", lines.length);
 
-for(const row of split){
+    for (const row of lines) {
+        if (!row.trim()) continue; // if empty row
 
-    if (!row.trim()) continue; // if the row in empty
+        // 1. Split the string into words using spaces
+        const wordsInRow = row.split(' ');
+        
+        // 2. The IP address is in the first position.
+        const ip = wordsInRow[0];
 
-    console.log("Current row:", row);
+        // 3. Add +1 to this IP address
+        ipCounts[ip] = (ipCounts[ip] || 0) + 1;
 
-    // 1. Splited the specific lines into words/parts using spaces.
-    const wordsInRow = row.split(' ');
+        if (row.includes('404')) {
+            notFoundCount++;
+        }
 
-    // 2. IP adress in the first index 0
-    const ip = wordsInRow[0];
-
-    // 3. For ip object we sum up one more +1
-    ipSummer[ip] = (ipSummer[ip] || 0) + 1;
-
-    if(row.includes('404')){
-        console.log("404 error found on line: ",row);
-        notFoundCount++;
+        if (row.includes('200')) {
+            isFoundOk++;
+        }
     }
 
-    if(row.includes('200')){
-        console.log("'200 OK' successful requests found: ",row)
-        isFoundOk++
-    }
+    // --- Results LOGS ---
+    console.log("\n--- ANALYSIS REPORT ---");
+    console.log("It was successfully analyzed!");
+    console.log(`Total number of 404 errors: ${notFoundCount}`);
+    console.log(`Total count of 200 OK: ${isFoundOk}`);
+    console.log("Counting IP addresses: ", ipCounts);
 
+} catch (error) {
+    console.error("Error when reading a file!:", error.message);
 }
-
-// LOGS //
-console.log("It was successfully analyzed!");
-console.log(`Total number of 404 errors: ${notFoundCount}`);
-console.log(`Total count of 200 OK: ${isFoundOk}`);
-console.log("Counting IP addresses: ", ipSummer);
